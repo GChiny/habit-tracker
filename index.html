@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Habits">
+<meta name="theme-color" content="#f8f7f4">
+<title>Habit Tracker</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --color-border-tertiary: #e6e4df;
+  --color-border-secondary: #dcdad5;
+  --color-background-primary: #ffffff;
+  --color-text-primary: #333333;
+  --color-text-secondary: #555555;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: #ecebe7;
+  font-family: 'Nunito', sans-serif;
+  display: flex; justify-content: center;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+.app {
+  width: 100%; max-width: 420px; margin: 0 auto; min-height: 600px;
+  display: flex; flex-direction: column;
+  background: #f8f7f4; overflow: hidden;
+  border: 0.5px solid var(--color-border-tertiary); font-family: 'Nunito', sans-serif;
+}
+@media (min-width: 440px) {
+  .app { border-radius: 24px; min-height: 90vh; margin: 20px auto; }
+}
+.habits-list { flex: 1; }
+.header { padding: 28px 24px 24px; transition: background 0.4s; }
+.header.morning { background: #F2B950; }
+.header.night   { background: #4B5EAA; }
+.header-top { display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 32px; font-weight: 800; color: white; letter-spacing: -0.5px; }
+
+.toggle-pill {
+  display: flex; align-items: center;
+  width: 108px; height: 52px;
+  border-radius: 999px;
+  border: 2.5px solid white;
+  padding: 6px;
+  cursor: pointer; outline: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.35s;
+  position: relative;
+  appearance: none; -webkit-appearance: none;
+}
+.toggle-pill.morning-mode { background: #F2B950; }
+.toggle-pill.night-mode   { background: #4B5EAA; }
+.toggle-knob {
+  position: absolute;
+  width: 40px; height: 40px; border-radius: 50%;
+  background: white;
+  top: 50%; transform: translateY(-50%);
+  transition: left 0.32s cubic-bezier(.4,0,.2,1);
+  pointer-events: none; z-index: 0;
+}
+.toggle-pill.morning-mode .toggle-knob { left: 6px; }
+.toggle-pill.night-mode   .toggle-knob { left: calc(100% - 46px); }
+.t-icon {
+  width: 40px; height: 40px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; z-index: 1; flex-shrink: 0;
+}
+.t-icon svg { width: 25px; height: 25px; display: block; }
+.t-icon.moon svg { transform: translateX(10px); }
+.toggle-pill.morning-mode .t-icon.sun  svg { stroke: #F2B950; fill: none; }
+.toggle-pill.morning-mode .t-icon.moon .moon-path { fill: rgba(255,255,255,0.5); }
+.toggle-pill.morning-mode .t-icon.moon .star-dot  { fill: rgba(255,255,255,0.5); }
+.toggle-pill.night-mode .t-icon.moon .moon-path { fill: #4B5EAA; }
+.toggle-pill.night-mode .t-icon.moon .star-dot  { fill: #4B5EAA; }
+.toggle-pill.night-mode .t-icon.sun  svg { stroke: rgba(255,255,255,0.5); fill: none; }
+
+.reminder { display: flex; justify-content: space-between; align-items: center; padding: 14px 24px 10px; }
+.reminder span { font-size: 15px; color: #aaa; font-weight: 600; }
+.edit-btn {
+  background: none; border: none; cursor: pointer;
+  font-size: 15px; font-weight: 700; color: #555;
+  padding: 4px 8px; border-radius: 8px;
+}
+.edit-btn.active { color: #E53935; }
+
+.progress-bar-wrap { margin: 0 16px 4px; background: rgba(0,0,0,0.08); border-radius: 8px; height: 6px; overflow: hidden; }
+.progress-bar-fill { height: 100%; border-radius: 8px; transition: width 0.4s, background 0.4s; }
+.morning-accent { background: #F2B950; }
+.night-accent   { background: #4B5EAA; }
+.progress-label { margin: 0 16px 10px; font-size: 12px; color: #aaa; font-weight: 600; }
+
+.habits-list { padding: 4px 16px 16px; display: flex; flex-direction: column; gap: 10px; }
+.habit-wrapper { position: relative; border-radius: 14px; overflow: hidden; touch-action: pan-y; max-height: 200px; }
+.delete-bg {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 100%;
+  background: #E53935; display: flex; align-items: center;
+  justify-content: flex-end; padding-right: 22px; border-radius: 14px;
+  color: white; font-size: 14px; font-weight: 700; opacity: 0; transition: opacity 0.15s;
+}
+.delete-bg.visible { opacity: 1; }
+.habit-item {
+  border-radius: 14px; padding: 15px 14px 15px 16px;
+  display: flex; align-items: center; gap: 12px;
+  cursor: pointer; user-select: none; position: relative; will-change: transform;
+}
+.habit-check {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2.5px solid rgba(255,255,255,0.85); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; transition: background 0.2s;
+}
+.habit-item.done .habit-check { background: rgba(255,255,255,0.9); border-color: transparent; }
+.habit-item.done .habit-check::after { content: '✓'; font-size: 14px; font-weight: 800; }
+.habit-label { font-size: 16px; font-weight: 700; color: white; flex: 1; min-width: 0; }
+.habit-item.done .habit-label { opacity: 0.65; text-decoration: line-through; }
+.habit-edit-input {
+  flex: 1; background: rgba(255,255,255,0.25); border: 1.5px solid rgba(255,255,255,0.7);
+  border-radius: 8px; padding: 4px 10px; font-size: 15px; font-weight: 700;
+  font-family: 'Nunito', sans-serif; color: white; outline: none; min-width: 0;
+}
+.drag-handle { display: flex; flex-direction: column; gap: 4px; cursor: grab; flex-shrink: 0; padding: 2px 0; }
+.drag-handle:active { cursor: grabbing; }
+.drag-line { width: 18px; height: 2px; background: rgba(255,255,255,0.55); border-radius: 2px; }
+
+.add-section { padding: 8px 16px 20px; }
+.color-picker-row { display: flex; gap: 8px; padding-bottom: 10px; flex-wrap: wrap; }
+.color-opt {
+  width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+  border: 2px solid transparent; transition: border-color 0.15s, transform 0.12s;
+  position: relative;
+}
+.color-remove {
+  position: absolute; top: -6px; right: -6px;
+  width: 15px; height: 15px; border-radius: 50%;
+  background: #555; color: #fff; font-size: 11px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  line-height: 1; box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.color-opt.selected { border-color: var(--color-text-secondary); transform: scale(1.15); }
+.color-add {
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow: hidden;
+  background: conic-gradient(#f08080,#f2b950,#5baa7a,#5a9bb5,#6b7fd4,#9c84d4,#f08080);
+  border: 2px solid var(--color-border-secondary);
+}
+.color-add::after {
+  content: '+'; position: absolute; color: #fff; font-size: 16px; font-weight: 800;
+  line-height: 1; text-shadow: 0 0 2px rgba(0,0,0,0.4);
+}
+.color-add input { position: absolute; inset: -4px; opacity: 0; cursor: pointer; }
+.add-form { display: flex; gap: 8px; }
+.add-input {
+  flex: 1; padding: 12px 16px; border-radius: 12px;
+  border: 1.5px solid var(--color-border-secondary);
+  background: var(--color-background-primary);
+  font-size: 15px; font-family: 'Nunito', sans-serif;
+  color: var(--color-text-primary); outline: none;
+}
+.add-btn {
+  padding: 12px 18px; border-radius: 12px; border: none;
+  font-size: 22px; cursor: pointer; font-weight: 700; color: white;
+  transition: background 0.4s; line-height: 1;
+}
+.hint { text-align: center; font-size: 12px; color: #bbb; padding: 0 16px 8px; font-weight: 600; }
+.empty-msg { text-align: center; padding: 24px; color: #bbb; font-size: 15px; font-weight: 600; }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="header morning" id="header">
+    <div class="header-top">
+      <h1 id="mode-title">Morning</h1>
+      <button class="toggle-pill morning-mode" id="toggle-pill" onclick="toggleMode()" aria-label="Cambiar modo">
+        <div class="toggle-knob"></div>
+        <div class="t-icon sun">
+          <svg viewBox="0 0 24 24" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <line x1="12" y1="2" x2="12" y2="5"/>
+            <line x1="12" y1="19" x2="12" y2="22"/>
+            <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/>
+            <line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+            <line x1="2" y1="12" x2="5" y2="12"/>
+            <line x1="19" y1="12" x2="22" y2="12"/>
+            <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/>
+            <line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+          </svg>
+        </div>
+        <div class="t-icon moon">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path class="moon-path" d="M21.5 13.2A9.2 9.2 0 1 1 10.8 2.5 6 6 0 0 0 21.5 13.2z"/>
+          </svg>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <div class="reminder">
+    <span id="reminder-time">06:00am reminder</span>
+    <button class="edit-btn" id="edit-btn" onclick="toggleEdit()">Edit</button>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill morning-accent" id="progress-fill" style="width:0%"></div>
+  </div>
+  <div class="progress-label" id="progress-label">0 de 0 completados</div>
+
+  <div class="hint" id="hint">Desliza ← para borrar &nbsp;·&nbsp; Mantén ≡ para ordenar</div>
+  <div class="habits-list" id="habits-list"></div>
+
+  <div class="add-section">
+    <div class="color-picker-row" id="color-picker-row"></div>
+    <div class="add-form">
+      <input class="add-input" id="add-input" type="text" placeholder="Añadir hábito..." maxlength="40"/>
+      <button class="add-btn morning-accent" id="add-btn" onclick="addHabit()">+</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLORS=['#4CAF82','#6B7FD4','#F08080','#3D6B5E','#E06060','#5BAA7A','#9C84D4','#E8875A','#5A9BB5','#C97DB5'];
+const defaultHabits={
+  morning:[
+    {id:1,label:'Wake up early',color:'#3D6B5E',done:false},
+    {id:2,label:'Drink some water',color:'#6B7FD4',done:false},
+    {id:3,label:'Do your skincare routine',color:'#F08080',done:false},
+    {id:4,label:'Do some quick stretching',color:'#3D6B5E',done:false},
+    {id:5,label:'Take your vitamins',color:'#F08080',done:false},
+    {id:6,label:'Make your bed',color:'#F08080',done:false},
+    {id:7,label:"Change out of PJ's",color:'#E06060',done:false},
+    {id:8,label:'Walk the dog',color:'#5BAA7A',done:false},
+  ],
+  night:[
+    {id:10,label:'No screens after 9pm',color:'#4B5EAA',done:false},
+    {id:11,label:'Read 20 minutes',color:'#9C84D4',done:false},
+    {id:12,label:'Night skincare routine',color:'#C97DB5',done:false},
+    {id:13,label:'Meditate 5 minutes',color:'#5A9BB5',done:false},
+    {id:14,label:'Journal your day',color:'#4B5EAA',done:false},
+    {id:15,label:"Prepare tomorrow's outfit",color:'#9C84D4',done:false},
+  ]
+};
+const STORAGE_KEY='habitTracker_v8';
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
+function loadState(){
+  let s;
+  try{ s=JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ s=null; }
+  if(!s||!s.habits||!s.habits.morning||!s.habits.night){
+    return {mode:'morning',habits:JSON.parse(JSON.stringify(defaultHabits)),nextId:20,selectedColor:COLORS[0],customColors:[],editMode:false,date:todayStr()};
+  }
+  // Nuevo día: reinicia lo marcado pero conserva los hábitos
+  if(s.date!==todayStr()){
+    s.habits.morning.forEach(h=>h.done=false);
+    s.habits.night.forEach(h=>h.done=false);
+    s.date=todayStr();
+  }
+  s.editMode=false;
+  if(!s.selectedColor)s.selectedColor=COLORS[0];
+  if(!s.nextId)s.nextId=20;
+  if(!s.customColors)s.customColors=[];
+  return s;
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }catch(e){}
+}
+let state=loadState();
+let isNight=state.mode==='night';
+
+function applyMode(){
+  document.getElementById('toggle-pill').className='toggle-pill '+(isNight?'night-mode':'morning-mode');
+  document.getElementById('header').className='header '+(isNight?'night':'morning');
+  document.getElementById('mode-title').textContent=isNight?'Night':'Morning';
+  document.getElementById('progress-fill').className='progress-bar-fill '+(isNight?'night-accent':'morning-accent');
+  document.getElementById('add-btn').className='add-btn '+(isNight?'night-accent':'morning-accent');
+  document.getElementById('reminder-time').textContent=isNight?'09:30pm reminder':'06:00am reminder';
+}
+function toggleMode(){
+  isNight=!isNight; state.mode=isNight?'night':'morning';
+  applyMode();
+  render();
+}
+function toggleEdit(){
+  state.editMode=!state.editMode;
+  const btn=document.getElementById('edit-btn');
+  if(state.editMode){
+    btn.textContent='Listo'; btn.classList.add('active');
+    document.getElementById('hint').textContent='Toca el texto para editar · Desliza ← para borrar';
+  } else {
+    btn.textContent='Edit'; btn.classList.remove('active');
+    document.getElementById('hint').textContent='Desliza ← para borrar · Mantén ≡ para ordenar';
+    document.querySelectorAll('.habit-edit-input').forEach(inp=>{
+      const h=state.habits[state.mode].find(x=>x.id===parseInt(inp.dataset.id));
+      if(h&&inp.value.trim())h.label=inp.value.trim();
+    });
+  }
+  render();
+}
+function toggleHabit(id){if(state.editMode)return;const h=state.habits[state.mode].find(x=>x.id===id);if(h){h.done=!h.done;render();}}
+function deleteHabit(id){state.habits[state.mode]=state.habits[state.mode].filter(x=>x.id!==id);render();}
+function addHabit(){
+  const inp=document.getElementById('add-input'),label=inp.value.trim();if(!label)return;
+  state.habits[state.mode].push({id:state.nextId++,label,color:state.selectedColor,done:false});inp.value='';render();
+}
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&document.activeElement===document.getElementById('add-input'))addHabit();});
+function selectColor(c){state.selectedColor=c;saveState();renderColorPicker();}
+function addCustomColor(c){
+  if(!state.customColors)state.customColors=[];
+  if(!COLORS.includes(c)&&!state.customColors.includes(c))state.customColors.push(c);
+  state.selectedColor=c;saveState();renderColorPicker();
+}
+function removeCustomColor(c,e){
+  e.stopPropagation();
+  state.customColors=(state.customColors||[]).filter(x=>x!==c);
+  if(state.selectedColor===c)state.selectedColor=COLORS[0];
+  saveState();renderColorPicker();
+}
+function renderColorPicker(){
+  const custom=state.customColors||[];
+  const swatches=[...COLORS,...custom].map(c=>{
+    const isCustom=custom.includes(c);
+    return `<div class="color-opt ${c===state.selectedColor?'selected':''}" style="background:${c}" onclick="selectColor('${c}')">`+
+      (isCustom?`<span class="color-remove" onclick="removeCustomColor('${c}',event)">×</span>`:'')+`</div>`;
+  }).join('');
+  const addBtn=`<label class="color-opt color-add" title="Añadir color personalizado"><input type="color" value="${state.selectedColor}" onchange="addCustomColor(this.value)"></label>`;
+  document.getElementById('color-picker-row').innerHTML=swatches+addBtn;
+}
+function setupSwipe(wrapper,id){
+  const item=wrapper.querySelector('.habit-item'),bg=wrapper.querySelector('.delete-bg');
+  let sx=0,cx=0,active=false;
+  function oS(x){sx=x;cx=0;active=true;item.style.transition='none';}
+  function oM(x){if(!active)return;const dx=x-sx;if(dx>0)return;cx=dx;item.style.transform=`translateX(${Math.max(dx,-140)}px)`;bg.className='delete-bg'+(Math.abs(dx)>40?' visible':'');}
+  function oE(){
+    if(!active)return;active=false;item.style.transition='transform 0.22s ease';
+    if(Math.abs(cx)>=80){item.style.transform='translateX(-100%)';wrapper.style.transition='max-height 0.3s ease,opacity 0.3s ease,margin 0.3s ease';wrapper.style.maxHeight=wrapper.offsetHeight+'px';setTimeout(()=>{wrapper.style.maxHeight='0';wrapper.style.opacity='0';wrapper.style.marginBottom='-10px';},50);setTimeout(()=>deleteHabit(id),320);}
+    else{item.style.transform='translateX(0)';bg.className='delete-bg';}cx=0;
+  }
+  item.addEventListener('mousedown',e=>{if(e.target.closest('.drag-handle,.habit-check,.habit-edit-input'))return;oS(e.clientX);const mm=e2=>oM(e2.clientX),mu=()=>{oE();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);});
+  item.addEventListener('touchstart',e=>{if(e.target.closest('.drag-handle,.habit-edit-input'))return;oS(e.touches[0].clientX);},{passive:true});
+  item.addEventListener('touchmove',e=>oM(e.touches[0].clientX),{passive:true});
+  item.addEventListener('touchend',oE);
+}
+let dSrc=null,dOver=null,dragging=false,ghost=null;
+function setupDrag(wrapper,id){
+  const handle=wrapper.querySelector('.drag-handle');let sy=0;
+  function sD(cy){dragging=true;dSrc=id;const r=wrapper.getBoundingClientRect();sy=cy-r.top;const g=wrapper.cloneNode(true);g.style.cssText=`position:fixed;width:${r.width}px;top:${r.top}px;left:${r.left}px;opacity:0.85;border-radius:14px;pointer-events:none;z-index:999;`;document.body.appendChild(g);ghost=g;wrapper.style.opacity='0.3';}
+  function mD(cy){if(!dragging||dSrc!==id)return;ghost.style.top=(cy-sy)+'px';document.getElementById('habits-list').querySelectorAll('.habit-wrapper').forEach(w=>{const r=w.getBoundingClientRect();if(cy>=r.top&&cy<=r.bottom)dOver=parseInt(w.dataset.id);});}
+  function eD(){if(!dragging||dSrc!==id)return;dragging=false;if(ghost){ghost.remove();ghost=null;}wrapper.style.opacity='1';if(dOver!==null&&dOver!==dSrc){const arr=state.habits[state.mode];const fi=arr.findIndex(x=>x.id===dSrc),ti=arr.findIndex(x=>x.id===dOver);if(fi!==-1&&ti!==-1){const[it]=arr.splice(fi,1);arr.splice(ti,0,it);}}dSrc=null;dOver=null;render();}
+  handle.addEventListener('mousedown',e=>{e.stopPropagation();sD(e.clientY);const mm=e2=>mD(e2.clientY),mu=()=>{eD();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);});
+  handle.addEventListener('touchstart',e=>{e.stopPropagation();sD(e.touches[0].clientY);const tm=e2=>{e2.preventDefault();mD(e2.touches[0].clientY);};const tu=()=>{eD();window.removeEventListener('touchmove',tm);window.removeEventListener('touchend',tu);};window.addEventListener('touchmove',tm,{passive:false});window.addEventListener('touchend',tu);});
+}
+function render(){
+  saveState();
+  const habits=state.habits[state.mode];
+  const done=habits.filter(h=>h.done).length,pct=habits.length?Math.round(done/habits.length*100):0;
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-label').textContent=`${done} de ${habits.length} completados`;
+  const list=document.getElementById('habits-list');
+  if(!habits.length){list.innerHTML='<div class="empty-msg">No hay hábitos aún.<br>¡Añade el primero! 🌟</div>';renderColorPicker();return;}
+  list.innerHTML=habits.map(h=>`
+    <div class="habit-wrapper" data-id="${h.id}">
+      <div class="delete-bg">Borrar</div>
+      <div class="habit-item ${h.done?'done':''}" style="background:${h.color}">
+        <div class="habit-check" onclick="toggleHabit(${h.id})"></div>
+        ${state.editMode?`<input class="habit-edit-input" data-id="${h.id}" value="${h.label.replace(/"/g,'&quot;')}" placeholder="Nombre del hábito"/>`:`<span class="habit-label">${h.label}</span>`}
+        <div class="drag-handle"><div class="drag-line"></div><div class="drag-line"></div><div class="drag-line"></div></div>
+      </div>
+    </div>
+  `).join('');
+  habits.forEach(h=>{const w=list.querySelector(`[data-id="${h.id}"]`);setupSwipe(w,h.id);setupDrag(w,h.id);});
+  renderColorPicker();
+}
+applyMode();
+render();
+
+// Registra el service worker para que funcione sin conexión e instalable como PWA.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('service-worker.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
