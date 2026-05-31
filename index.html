@@ -29,15 +29,16 @@ body {
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
 }
 .app {
-  width: 100%; max-width: 420px; margin: 0 auto; min-height: 600px;
+  width: 100%; max-width: 420px; margin: 0 auto;
+  height: 100vh; height: 100dvh;
   display: flex; flex-direction: column;
   background: #f8f7f4; overflow: hidden;
   border: 0.5px solid var(--color-border-tertiary); font-family: 'Nunito', sans-serif;
 }
 @media (min-width: 440px) {
-  .app { border-radius: 24px; min-height: 90vh; margin: 20px auto; }
+  .app { border-radius: 24px; height: 92vh; margin: 20px auto; }
 }
-.habits-list { flex: 1; }
+.habits-list { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
 .header { padding: 28px 24px 24px; transition: background 0.4s; }
 .header.morning { background: #F2B950; }
 .header.night   { background: #4B5EAA; }
@@ -113,21 +114,22 @@ body {
 }
 .habit-check {
   width: 26px; height: 26px; border-radius: 50%;
-  border: 2.5px solid rgba(255,255,255,0.85); flex-shrink: 0;
+  border: 2.5px solid currentColor; opacity: 0.92; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center; transition: background 0.2s;
 }
-.habit-item.done .habit-check { background: rgba(255,255,255,0.9); border-color: transparent; }
-.habit-item.done .habit-check::after { content: '✓'; font-size: 14px; font-weight: 800; }
-.habit-label { font-size: 16px; font-weight: 700; color: white; flex: 1; min-width: 0; }
+.habit-item.done .habit-check { background: currentColor; border-color: transparent; opacity: 1; }
+.habit-item.done .habit-check::after { content: '✓'; font-size: 14px; font-weight: 800; color: var(--hb); }
+.habit-label { font-size: 16px; font-weight: 700; color: inherit; flex: 1; min-width: 0; }
 .habit-item.done .habit-label { opacity: 0.65; text-decoration: line-through; }
 .habit-edit-input {
-  flex: 1; background: rgba(255,255,255,0.25); border: 1.5px solid rgba(255,255,255,0.7);
+  flex: 1; background: rgba(127,127,127,0.18); border: 1.5px solid currentColor;
   border-radius: 8px; padding: 4px 10px; font-size: 15px; font-weight: 700;
-  font-family: 'Nunito', sans-serif; color: white; outline: none; min-width: 0;
+  font-family: 'Nunito', sans-serif; color: inherit; outline: none; min-width: 0;
 }
+.habit-edit-input::placeholder { color: currentColor; opacity: 0.55; }
 .drag-handle { display: flex; flex-direction: column; gap: 4px; cursor: grab; flex-shrink: 0; padding: 2px 0; }
 .drag-handle:active { cursor: grabbing; }
-.drag-line { width: 18px; height: 2px; background: rgba(255,255,255,0.55); border-radius: 2px; }
+.drag-line { width: 18px; height: 2px; background: currentColor; opacity: 0.55; border-radius: 2px; }
 
 .add-section { padding: 8px 16px 20px; }
 .color-picker-row { display: flex; gap: 8px; padding-bottom: 10px; flex-wrap: wrap; }
@@ -203,7 +205,7 @@ body {
   </div>
 
   <div class="reminder">
-    <span id="reminder-time">06:00am reminder</span>
+    <span id="reminder-time">04:30am reminder</span>
     <button class="edit-btn" id="edit-btn" onclick="toggleEdit()">Edit</button>
   </div>
 
@@ -228,31 +230,38 @@ body {
 const COLORS=['#4CAF82','#6B7FD4','#F08080','#3D6B5E','#E06060','#5BAA7A','#9C84D4','#E8875A','#5A9BB5','#C97DB5'];
 const defaultHabits={
   morning:[
-    {id:1,label:'Wake up early',color:'#3D6B5E',done:false},
-    {id:2,label:'Drink some water',color:'#6B7FD4',done:false},
-    {id:3,label:'Do your skincare routine',color:'#F08080',done:false},
-    {id:4,label:'Do some quick stretching',color:'#3D6B5E',done:false},
-    {id:5,label:'Take your vitamins',color:'#F08080',done:false},
-    {id:6,label:'Make your bed',color:'#F08080',done:false},
-    {id:7,label:"Change out of PJ's",color:'#E06060',done:false},
-    {id:8,label:'Walk the dog',color:'#5BAA7A',done:false},
+    {id:1,label:'Tomar agua',color:'#5A9BB5',done:false},
+    {id:2,label:'Hacer la cama',color:'#9C84D4',done:false},
+    {id:3,label:'Estirar',color:'#5BAA7A',done:false},
+    {id:4,label:'Meditar',color:'#6B7FD4',done:false},
+    {id:5,label:'Journaling',color:'#E8875A',done:false},
+    {id:6,label:'Suplementos',color:'#F08080',done:false},
+    {id:7,label:'Lavar dientes',color:'#4CAF82',done:false},
+    {id:8,label:'Gimnasio',color:'#E06060',done:false},
+    {id:9,label:'Hacer batido',color:'#3D6B5E',done:false},
+    {id:10,label:'Planificar el día',color:'#C97DB5',done:false},
+    {id:11,label:'Baño',color:'#5A9BB5',done:false},
+    {id:12,label:'Desayunar',color:'#E8875A',done:false},
+    {id:13,label:'Lavar platos',color:'#6B7FD4',done:false},
   ],
   night:[
-    {id:10,label:'No screens after 9pm',color:'#4B5EAA',done:false},
-    {id:11,label:'Read 20 minutes',color:'#9C84D4',done:false},
-    {id:12,label:'Night skincare routine',color:'#C97DB5',done:false},
-    {id:13,label:'Meditate 5 minutes',color:'#5A9BB5',done:false},
-    {id:14,label:'Journal your day',color:'#4B5EAA',done:false},
-    {id:15,label:"Prepare tomorrow's outfit",color:'#9C84D4',done:false},
+    {id:20,label:'Ordenar casa',color:'#4B5EAA',done:false},
+    {id:21,label:'Meditar',color:'#6B7FD4',done:false},
+    {id:22,label:'Plant care',color:'#5BAA7A',done:false},
+    {id:23,label:'Lavar dientes',color:'#4CAF82',done:false},
+    {id:24,label:'Suplementos',color:'#F08080',done:false},
+    {id:25,label:'Lavar cara',color:'#C97DB5',done:false},
+    {id:26,label:'Hair care',color:'#9C84D4',done:false},
+    {id:27,label:'Leer',color:'#5A9BB5',done:false},
   ]
 };
-const STORAGE_KEY='habitTracker_v8';
+const STORAGE_KEY='habitTracker_v9';
 function todayStr(){const d=new Date();return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate();}
 function loadState(){
   let s;
   try{ s=JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ s=null; }
   if(!s||!s.habits||!s.habits.morning||!s.habits.night){
-    return {mode:'morning',habits:JSON.parse(JSON.stringify(defaultHabits)),nextId:20,selectedColor:COLORS[0],customColors:[],editMode:false,date:todayStr()};
+    return {mode:'morning',habits:JSON.parse(JSON.stringify(defaultHabits)),nextId:50,selectedColor:COLORS[0],customColors:[],editMode:false,date:todayStr()};
   }
   // Nuevo día: reinicia lo marcado pero conserva los hábitos
   if(s.date!==todayStr()){
@@ -262,7 +271,7 @@ function loadState(){
   }
   s.editMode=false;
   if(!s.selectedColor)s.selectedColor=COLORS[0];
-  if(!s.nextId)s.nextId=20;
+  if(!s.nextId||s.nextId<50)s.nextId=50;
   if(!s.customColors)s.customColors=[];
   return s;
 }
@@ -278,7 +287,7 @@ function applyMode(){
   document.getElementById('mode-title').textContent=isNight?'Night':'Morning';
   document.getElementById('progress-fill').className='progress-bar-fill '+(isNight?'night-accent':'morning-accent');
   document.getElementById('add-btn').className='add-btn '+(isNight?'night-accent':'morning-accent');
-  document.getElementById('reminder-time').textContent=isNight?'09:30pm reminder':'06:00am reminder';
+  document.getElementById('reminder-time').textContent=isNight?'08:00pm reminder':'04:30am reminder';
 }
 function toggleMode(){
   isNight=!isNight; state.mode=isNight?'night':'morning';
@@ -354,6 +363,18 @@ function setupDrag(wrapper,id){
   handle.addEventListener('mousedown',e=>{e.stopPropagation();sD(e.clientY);const mm=e2=>mD(e2.clientY),mu=()=>{eD();window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);});
   handle.addEventListener('touchstart',e=>{e.stopPropagation();sD(e.touches[0].clientY);const tm=e2=>{e2.preventDefault();mD(e2.touches[0].clientY);};const tu=()=>{eD();window.removeEventListener('touchmove',tm);window.removeEventListener('touchend',tu);};window.addEventListener('touchmove',tm,{passive:false});window.addEventListener('touchend',tu);});
 }
+// Devuelve texto negro o blanco según cuál contraste mejor con el color de fondo (WCAG).
+function textColorFor(hex){
+  let c=String(hex).replace('#','');
+  if(c.length===3)c=c.split('').map(x=>x+x).join('');
+  const r=parseInt(c.substr(0,2),16)/255, g=parseInt(c.substr(2,2),16)/255, b=parseInt(c.substr(4,2),16)/255;
+  if([r,g,b].some(v=>isNaN(v)))return '#ffffff';
+  const lin=v=>v<=0.03928?v/12.92:Math.pow((v+0.055)/1.055,2.4);
+  const L=0.2126*lin(r)+0.7152*lin(g)+0.0722*lin(b);
+  const contrastWhite=1.05/(L+0.05);
+  const contrastBlack=(L+0.05)/0.05;
+  return contrastBlack>=contrastWhite?'#1a1a1a':'#ffffff';
+}
 function render(){
   saveState();
   const habits=state.habits[state.mode];
@@ -365,7 +386,7 @@ function render(){
   list.innerHTML=habits.map(h=>`
     <div class="habit-wrapper" data-id="${h.id}">
       <div class="delete-bg">Borrar</div>
-      <div class="habit-item ${h.done?'done':''}" style="background:${h.color}">
+      <div class="habit-item ${h.done?'done':''}" style="background:${h.color};color:${textColorFor(h.color)};--hb:${h.color}">
         <div class="habit-check" onclick="toggleHabit(${h.id})"></div>
         ${state.editMode?`<input class="habit-edit-input" data-id="${h.id}" value="${h.label.replace(/"/g,'&quot;')}" placeholder="Nombre del hábito"/>`:`<span class="habit-label">${h.label}</span>`}
         <div class="drag-handle"><div class="drag-line"></div><div class="drag-line"></div><div class="drag-line"></div></div>
